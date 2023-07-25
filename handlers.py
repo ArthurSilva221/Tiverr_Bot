@@ -3,15 +3,16 @@ import pandas as pd
 import html
 from bs4 import BeautifulSoup
 import re
+import datetime,time, threading
 
 def checar_chamado():
     # Faz a conexão com a API puxando os Tickets com Status 1 = Novo
     chamados = []
 
     try:
-        with glpi_api.connect(url='http://chamado.verreschi.com/glpi/apirest.php/',
-                              apptoken='lqgXI98XoygfItiviU4NAdQqNMguPuOasH8ls2G4',
-                              auth=('arthur.henrique', '152022mo')) as glpi:
+        with glpi_api.connect(url='http://dominio/glpi/apirest.php/',
+                              apptoken='seutoken',
+                              auth=('seuuser', 'suasenha')) as glpi:
             glpi = glpi.get_all_items('Ticket', searchText={'status': '1'})
     except glpi_api.GLPIError as err:
         print(str(err))
@@ -60,9 +61,9 @@ def exibir_chamado():
     chamados = []
 
     try:
-        with glpi_api.connect(url='http://chamado.verreschi.com/glpi/apirest.php/',
-                              apptoken='lqgXI98XoygfItiviU4NAdQqNMguPuOasH8ls2G4',
-                              auth=('arthur.henrique', '152022mo')) as glpi:
+        with glpi_api.connect(url='http://dominio/glpi/apirest.php/',
+                              apptoken='seutoken',
+                              auth=('seuuser', 'suasenha')) as glpi:
             glpi = glpi.get_all_items('Ticket', searchText={'status': '1'})
     except glpi_api.GLPIError as err:
         print(str(err))
@@ -82,9 +83,9 @@ def exibir_chamado():
 
 def encerrar_chamado(id):
     try:
-        with glpi_api.connect(url='http://chamado.verreschi.com/glpi/apirest.php/',
+        with glpi_api.connect(url='http://dominio/glpi/apirest.php/',
                                apptoken='lqgXI98XoygfItiviU4NAdQqNMguPuOasH8ls2G4',
-                                  auth=('arthur.henrique', '152022mo')) as glpi:
+                                  auth=('user', 'senha')) as glpi:
             glpi = glpi.update('Ticket',
                                {'id': id, 'status': '5', 'content': 'SOLUÇÃO APROVADA VIA SERVIÇO MOBILE', '_close': '1',
                                 'add_close': '1'})
@@ -92,9 +93,9 @@ def encerrar_chamado(id):
             print(str(err))
 
     try:
-        with glpi_api.connect(url='http://chamado.verreschi.com/glpi/apirest.php/',
+        with glpi_api.connect(url='http://dominio/glpi/apirest.php/',
                                apptoken='lqgXI98XoygfItiviU4NAdQqNMguPuOasH8ls2G4',
-                                  auth=('arthur.henrique', '152022mo')) as glpi:
+                                  auth=('user', 'senha')) as glpi:
             glpi2 = glpi.add('ticketvalidation',
                            {'id':2,'tickets_id':id, 'comment_submission':'VALIDAÇÃO MOBILE', 'status':5})
     except glpi_api.GLPIError as err:
