@@ -2,8 +2,9 @@ import telebot
 from vars import Comandos, helpdesk, ajuda, ponto_0, ponto_1, ponto_2, batida
 from handlers import checar_chamado,exibir_chamado,encerrar_chamado
 from time import sleep
+import threading,datetime
 
-KEY = "6326692952:AAHAOzOq7Y3931MQUx4XjB7Vj_ZVUFNRvLo"
+KEY = "SUACHAVEBOT"
 bot = telebot.TeleBot(KEY)
 
 def receive_message(message):  # INTERPRETADOR DE TEXTO
@@ -25,13 +26,13 @@ def receive_message(message):  # INTERPRETADOR DE TEXTO
         Ponto(message)
 
     elif ler_mensagem in ponto_1:
-        Contador(message, tempo=3600)
+        Contador(message, tempo=3600, validador=False)
 
     elif ler_mensagem in ponto_2:
-        Contador(message, tempo=1200)
+        Contador(message, tempo=1200, validador=False)
 
     elif ler_mensagem in batida:
-        Cronometro_Ponto(message,True)
+        Contador(message,tempo=1, validador=True)
 
     elif ler_mensagem == "FECHAR":
         Fechar_Lista_Chamado(message)
@@ -79,9 +80,10 @@ Se precisar ver meus comandos é só digitar "comandos", ou "ajuda" para exibir 
 def Mensagem_Help(message):  # EXIBE A LISTA DE COMANDOS DO BOT
     texto = """
 Segue a lista de Comandos do Bot: 
-/Chamados - Exibe a lista de Chamados abertos no GLPI
-/Ponto - Exibe a lista de opções para notificação de ponto
-/Fechar_id - Fecha chamado por ID
+- Chamados - Exibe a lista detalhada de Chamados abertos no GLPI
+- Fechar - Exibe a lista de Chamados abertos e mostra as opções para fechar
+- Ponto - Exibe a lista de opções para notificação de ponto
+
 """
     bot.reply_to(message, texto)
 
@@ -99,36 +101,15 @@ Escolha o tipo de pausa que vai fazer:
 """
     bot.reply_to(message, texto)
 
-# =======================================================================================================================
-def Cronometro_Ponto(message, validador):
-    for i in range(60):
 
-        if validador == True:
-            bot.reply_to(message, f"""📃 - BATIDA REGISTRADA - 📃""")
-            break;
-
-        else:
-            sleep(60)
-            if i % 5 == 0 and i!=0:
-                bot.reply_to(message, f"""⚠️ - BATIDA NÃO REGISTRADA - ⚠️
-
-                Não foi registrado batida de ponto há {i} minutos. 
-
-                Em caso de batida feita use o comando Batida ou Ponto Registrado.   
-                """)
 
 # =======================================================================================================================
-def Contador(message, tempo=int):  # conta o tempo de pausa
-    bot.reply_to(message, f"""⏱️ - CONTADOR INICIADO - ⏱️
-TEMPO: {tempo / 60} Minutos""")
-    sleep(tempo - 300)  # 3300 - 55 Min
-    bot.reply_to(message, """⚠️ - ALERTA DE TEMPO - ⚠️
-5 Minutos restantes de sua pausa!""")
-    sleep(300)  # 300 - 5 Min
-    bot.reply_to(message, """⛔ - ALERTA DE TEMPO - ⛔
-SUA PAUSA ACABOU, BATA O PONTO""")
-
-    Cronometro_Ponto(message, False)
+def Contador(message, tempo=int, validador=bool):  # conta o tempo de pausa
+    temporizador_thread = threading.Thread(target=temporizador_batida, args=(tempo, message,validador,))
+    if not validador:
+        temporizador_thread.start()
+    else:
+        bot.reply_to(message, f"""📃 - BATIDA REGISTRADA - 📃""")
 
 # =======================================================================================================================
 def Chamados_Mensagem(message, texto):
@@ -137,8 +118,8 @@ def Chamados_Mensagem(message, texto):
 
     bot.reply_to(message, texto)
 
-# =======================================================================================================================
-def Fechar_Lista_Chamado(mensagem):
+# =====================================================================================================================
+def Fechar_Lista_Chamado(message):
     list_chamado = exibir_chamado()
     texto = f"""
         Escolha uma opção para continuar (Clique no item):
@@ -146,7 +127,7 @@ def Fechar_Lista_Chamado(mensagem):
         {list_chamado}
 
     Responder qualquer outra coisa não vai funcionar, clique em uma das opções"""
-    bot.reply_to(mensagem, texto)
+    bot.reply_to(message, texto)
 
 def Tenta(mensagem):
 
@@ -156,6 +137,33 @@ def Tenta(mensagem):
     encerrar_chamado(id)
 
     bot.reply_to(mensagem, f'Chamado de ID - {id} encerrado via serviço Mobile')
+
+def temporizador_batida(segundos, message, encerrar_batida):
+    bot.reply_to(message, f"""⏱️ - CONTADOR INICIADO - ⏱️
+    TEMPO: {segundos / 60} Minutos""")
+
+    fim_tempo = datetime.datetime.now() + datetime.timedelta(seconds=segundos)
+    alerta_5_min = fim_tempo - datetime.timedelta(minutes=5)  # Definindo o horário de alerta
+    alerta = False
+
+    while datetime.datetime.now() < fim_tempo:
+        # Verificar se é hora do alerta de 5 minutos
+        if not alerta and datetime.datetime.now() >= alerta_5_min:
+            bot.reply_to(message, """⚠️ - ALERTA DE TEMPO - ⚠️ 5 Minutos restantes de sua pausa!""")
+            alerta = True
+
+    bot.reply_to(message, """⛔ - ALERTA DE TEMPO - ⛔
+    SUA PAUSA ACABOU, BATA O PONTO""")
+
+    for i in range(10) and not encerrar_batida:
+        sleep(60)
+        if i % 5 == 0 and i != 0:
+            bot.reply_to(message, f"""⚠️ - BATIDA NÃO REGISTRADA - ⚠️
+
+            Não foi registrado batida de ponto há {i} minutos. 
+
+            Em caso de batida feita use o comando Batida ou Ponto Registrado.   
+                """)
 
 # =======================================================================================================================
 bot.infinity_polling()
