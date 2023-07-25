@@ -8,3 +8,5 @@ Usei a própria a API do GLPI integrada ao Python e criei funções para puxar o
 Por enquanto é isso, agradeço a atenção e qualquer dúvida sobre ele ou em relação a própria API do GLPI (Obs: Pra Python as informações sobre ela eu tive bastante dificuldade pra achar) meu email pessoal é arthur.silva@unisantos.br
 
 Agradeço a atenção e espero que tenha uma ótimo dia :)
+
+**Última atualização 25/07/2023
